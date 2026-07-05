@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dual Processor</title>
+<style>
+  :root {
+    --bg: #121212;
+    --panel: #1a1a1a;
+    --border: #444;
+    --text: #e0e0e0;
+    --text-dim: #777;
+    --control-bg: #232323;
+    --control-bg-hover: #2d2d2d;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #0a0a0a;
+    color: var(--text);
+    font-family: Arial, Helvetica, sans-serif;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .app {
+    width: 100%;
+    height: 100vh;
+    border: none;
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .banner {
+    text-align: center;
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 18px;
+    flex: 0 0 auto;
+  }
+
+  .headers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 auto;
+  }
+
+  .headers > div {
+    text-align: center;
+    padding: 8px;
+    font-size: 17px;
+    font-weight: bold;
+  }
+
+  .headers > div:first-child {
+    border-right: 1px solid var(--border);
+  }
+
+  .code-row {
+    display: flex;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 2px solid var(--border);
+    flex: 2 0 auto;
+  }
+
+  .code-row > .code-cell {
+    flex-grow: 1;
+    border-right: 1px solid var(--border);
+    padding: 0;
+  }
+
+  .code-row > .code-cell:last-child {
+    border-right: none;
+  }
+
+  textarea {
+    width: 100%;
+    background: #0e0e0e;
+    color: var(--text);
+    border: none;
+    resize: none;
+    font-family: "Consolas", "Menlo", monospace;
+    font-size: 13px;
+    padding: 10px;
+    outline: none;
+    display: block;
+  }
+
+  .code-cell {
+    display: flex;
+  }
+
+  .code-textarea {
+    height: 100%;
+  }
+
+  .main-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 130px minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    flex: 3;
+    min-height: 0;
+  }
+
+  .col {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    min-height: 0;
+    min-width: 0;
+    height: 100%;
+  }
+
+  /* input:output height ratio of 1:4 */
+  .input-wrap {
+    flex: 1 1 0;
+    display: flex;
+    min-height: 0;
+  }
+
+  .input-textarea {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .output-label {
+    flex: 0 0 auto;
+  }
+
+  .output {
+    flex: 4 1 0;
+  }
+
+  .main-row > .col:nth-child(1) {
+    border-right: 1px solid var(--border);
+  }
+
+  .main-row > .controls {
+    border-right: 1px solid var(--border);
+  }
+
+  .main-row > .col:last-child {
+    border-right: none;
+  }
+
+  .input-wrap {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .input-wrap textarea::placeholder {
+    color: var(--text-dim);
+  }
+
+  .output-label {
+    text-align: center;
+    padding: 6px;
+    font-size: 13px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .output {
+    flex: 4 1 0;
+    min-height: 0;
+    overflow-y: scroll;
+    overflow-x: scroll;
+    padding: 12px;
+    font-family: "Consolas", "Menlo", monospace;
+    font-size: 13px;
+    white-space: nowrap;
+    background: #0e0e0e;
+    border: 1px solid #333;
+    color: #6fbf6f;
+  }
+
+  .output .placeholder {
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .controls button {
+    flex: 1;
+    min-height: 0;
+    background: var(--control-bg);
+    color: var(--text);
+    border: none;
+    border-bottom: 1px solid var(--border);
+    font-size: 15px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .controls button:last-child {
+    border-bottom: none;
+  }
+
+  .controls button:hover {
+    background: var(--control-bg-hover);
+  }
+
+  .controls button:active {
+    background: #333;
+  }
+</style>
+  <script src="./mini-coi-fd.js"></script>
+  <script type="module" src="./pyscript/core.js" offline></script>
+  <link rel="stylesheet" href="./pyscript/core.css">
+</head>
+<body>
+
+<div class="app">
+  <div class="banner">This is the web version! Use the python version instead, its way better.</div>
+
+  <div class="headers">
+    <div>Processor 1: <span id="p1stat">Stopped</span></div>
+    <div>Processor 2: <span id="p2stat">Stopped</span></div>
+  </div>
+
+  <div class="code-row">
+    <div class="code-cell">
+      <textarea class="code-textarea" id="dev1" placeholder="# code for processor 1"></textarea>
+    </div>
+    <div class="code-cell">
+      <textarea class="code-textarea" id="dev2" placeholder="# code for processor 2"></textarea>
+    </div>
+  </div>
+
+  <div class="main-row">
+    <div class="col">
+      <div class="input-wrap">
+        <textarea class="input-textarea" placeholder="Processor 1 input" id="input1"></textarea>
+      </div>
+      <div class="output-label">Processor 1 output</div>
+      <div class="output" id="output1"><span class="placeholder">&gt;&gt;&gt; waiting to start...</span><br></div>
+    </div>
+
+    <div class="controls">
+      <button id="run">Start/Stop</button>
+      <button id="rstart">Restart</button>
+      <button id="reset">Reset Code</button>
+      <button onclick="window.location.href='https://github.com'">Github repo</button>
+      <button onclick="window.location.href='https://github.com'">Tutorial</button>
+    </div>
+
+    <div class="col">
+      <div class="input-wrap">
+        <textarea class="input-textarea" placeholder="Processor 2 input" id="input2"></textarea>
+      </div>
+      <div class="output-label">Processor 2 output</div>
+      <div class="output" id="output2"><span class="placeholder">&gt;&gt;&gt; waiting to start...</span><br></div>
+    </div>
+  </div>
+</div>
+<script src="./worker.py" type="mpy" worker config="./pyscript.json"></script>
+</body>
+</html>
