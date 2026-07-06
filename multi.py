@@ -1,7 +1,6 @@
-from main import Head, IntIO, asm, IO, fmtprint, TextIO
 import blessed
 import time
-
+from helpers import IO, asm, Head
 class Reg(IO):
     def __init__(self):
         self.vals = []
@@ -496,28 +495,7 @@ def fourfunc():
     compres = comp.compile()
     print(compres)
     asmed = asm(compres)
-    fmtprint(asmed, compres)
     return asmed
-
-def run_singlecore(asmed):
-    tio = TextIO(255)
-    h = Head(asmed, [tio])
-    while True:
-        h.advance()
-        i = 0
-        with tio.term.cbreak():
-            h.advance()
-            potinp = ""
-            if h.ip < 0:
-                potinp = tio.term.inkey(0.001)
-                i = 10
-            else:
-                if i == 0:
-                    potinp = tio.term.inkey(0.0001)
-                    i = 1000
-                i += -1
-            if len(potinp) == 1:
-                tio.keys.append(ord(potinp))
 
 class IOHusk(IO):
     def __init__(self):
@@ -574,7 +552,7 @@ def run_dualcore(asmed1, asmed2, boost):
             print(term.move_xy(term.width//2 + 1,0),end="",flush=True)
             for line in sout[max(len(fout) - (term.height -2), 0):]:
                 print(line,flush=True)
-                print(term.move_x(term.width//2 + 1), end="", flush=True)
+                print(term.move_x(term.width//2 + 1), end="", flush=True) # type: ignore
 
             curpos = 0
             if l:

@@ -16,6 +16,12 @@ MultiSubleq is a superset of regular subleq. Its 2 main diferentiators are:
 1. Allowing for multiple IO channels, by assigning each a magic number, equal to "((i - 1) * -1)" where i equals the channel's index in the list of channels.
 2. Introducing a system by which the processor can halt until a value is available from an IO channel, by jumping to that channel's magic number.
 
+## Usage
+
+The interpreter is available in 2 formats:
+1. [The website](https://cmcg.pyscriptapps.com/jolly-union/), which is easier to use and doesn't require cloning this repo
+2. The CLI, which requires you to clone this repo and requires editing the code for more advanced functions, but probably runs faster, is easier to debug your programs in, includes the `Compiler` class from multi.py which makes writing programs way easier, and includes some more complex demos, such as the 5 function (add, subtract, multiply, interger divide, and modulus) calcualtor.
+
 ## How does one "MultiSubleq"?
 
 If it's at all possible, I would advise using the compiler-thing I have in multi.py, its way better than writing by hand. But, if you truly want to write assembly, since MultiSubleq is based on subleq, [the esolangs page on subleq](https://esolangs.org/wiki/Subleq) is able to get you up to speed. So the following is mostly stuff to help someone who already understands subleq.
@@ -32,3 +38,6 @@ h0 j -1
 ```
 -1 -2 ?+1
 ```
+
+## AI
+I had claude write the HTML for the demo, because CSS is pain and misery.
