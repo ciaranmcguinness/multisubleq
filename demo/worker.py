@@ -2,8 +2,6 @@ from pyscript import web, when # type: ignore
 import asyncio
 import abc
 
-print("Loaded!")
-
 class IO(abc.ABC):
     def get(self) -> int:
         raise NotImplemented
@@ -133,74 +131,124 @@ running = False
 
 jmp = False
 
+@when("click", "#reset")
+async def reset_code(e):
+    print("resetting")
+    web.page["dev1"].value = """#Modified version of hello world from https://esolangs.org/wiki/Subleq#Printing_characters_in_a_loop
+# Send the character pointed to by p to processor 2.
+a a ?+1
+p Z ?+1
+Z a ?+1
+Z Z ?+1
+a:0 -2 ?+1
 
-print("here")
+# Increment p.
+m1 p ?+1
+
+# Check if p < E.
+a a ?+1
+E Z ?+1
+Z a ?+1
+Z Z ?+1
+p a -3
+
+Z Z 0
+
+p:H Z:0 m1:-1
+
+# Our text "Hello, world!\\n" in ASCII codes
+H:72 101 108
+108 111 44
+32 87 111
+114 108 100
+33 10 E:E"""
+    web.page["dev2"].value = """#skip reading on first start, as IO may not have value
+Z:Z Z j:?+1
+j j ?+1 #set j to zero
+
+#add tgtp to j
+tgtp h0 ?+1
+h0 j -1
+
+tgt:-1 -2 -1 #Read from Processor 1 and write to IO.
+
+tgtp:tgt"""
+
 
 @when("click", "#rstart")
 async def res(e):
+    print("res")
     global jmp
     jmp = True
-    web.page["output1"].innerHTML = '<span class="placeholder">&gt;&gt;&gt; waiting to start...</span><br>'
-    web.page["output2"].innerHTML = '<span class="placeholder">&gt;&gt;&gt; waiting to start...</span><br>'
+    web.page["output1"].innerHTML = ""
+    web.page["output2"].innerHTML = ""
 
 @when("click", "#run")
 async def run(e):
-    print("run!")
     global running
     running = not running
 
-while True:
-    web.page["p1stat"].innerHTML = "Stopped"
-    web.page["p2stat"].innerHTML = "Stopped"
-    web.page["output1"].innerHTML = '<span class="placeholder">&gt;&gt;&gt; waiting to start...</span><br>'
-    web.page["output2"].innerHTML = '<span class="placeholder">&gt;&gt;&gt; waiting to start...</span><br>'
-    if running:
-        p = pair()
-        proc1 = None
-        code1 = web.page["dev1"].value
-        if len(code1) != 0:
-            proc1 = Head(asm(code1), [HTMLIO("input1","output1"),p[0]])
-        proc2 = None
-        code2 = web.page["dev2"].value
-        if len(code2) != 0:
-            proc2 = Head(asm(code2), [p[1],HTMLIO("input2","output2")])
-        i = 0
-        print("Inited!")
-        while running:
-            r = False
-            if jmp:
-                jmp = False
-                break
-            if proc1 != None:
-                proc1.advance()
-                if proc1.ip >= 0:
-                    r = True
-                    web.page["p1stat"].innerHTML = "Running"
-                else:
-                    wid = (proc1.ip * -1) -1
-                    if wid >= len(proc1.ios):
-                        web.page["p1stat"].innerHTML = "Stopped"
-                        proc1 = None
+if __name__ == "__main__":
+    print("loaded!")
+    if (len(web.page["dev1"].value) == 0) and (len(web.page["dev2"].value) == 0):
+        await reset_code(None)
+
+    while True:
+        print("loop")
+        web.page["p1stat"].innerHTML = "Stopped"
+        web.page["p2stat"].innerHTML = "Stopped"
+        web.page["output1"].innerHTML = '<span class="placeholder">&gt;&gt;&gt; waiting to start...</span><br>'
+        web.page["output2"].innerHTML = '<span class="placeholder">&gt;&gt;&gt; waiting to start...</span><br>'
+        if running:
+            web.page["output1"].innerHTML = ""
+            web.page["output2"].innerHTML = ""
+            p = pair()
+            proc1 = None
+            code1 = web.page["dev1"].value
+            if len(code1) != 0:
+                proc1 = Head(asm(code1), [HTMLIO("input1","output1"),p[0]])
+            proc2 = None
+            code2 = web.page["dev2"].value
+            if len(code2) != 0:
+                proc2 = Head(asm(code2), [p[1],HTMLIO("input2","output2")])
+            i = 0
+            print("Inited!")
+            while running:
+                r = False
+                if jmp:
+                    jmp = False
+                    break
+                if proc1 != None:
+                    proc1.advance()
+                    if proc1.ip >= 0:
+                        r = True
+                        web.page["p1stat"].innerHTML = "Running"
                     else:
-                        web.page["p1stat"].innerHTML = f"Waiting for value on device {wid}"
-            if proc2 != None:
-                proc2.advance()
-                if proc2.ip >= 0:
-                    r = True
-                    web.page["p2stat"].innerHTML = "Running"
-                else:
-                    wid = (proc2.ip * -1) -1
-                    if wid >= len(proc2.ios):
-                        web.page["p2stat"].innerHTML = "Stopped"
-                        proc2 = None
+                        wid = (proc1.ip * -1) -1
+                        if wid >= len(proc1.ios):
+                            web.page["p1stat"].innerHTML = "Stopped"
+                            proc1 = None
+                        else:
+                            web.page["p1stat"].innerHTML = f"Waiting for value on device {wid}"
+                if proc2 != None:
+                    proc2.advance()
+                    if proc2.ip >= 0:
+                        r = True
+                        web.page["p2stat"].innerHTML = "Running"
                     else:
-                        web.page["p2stat"].innerHTML = f"Waiting for value on device {wid}"
-            if r:
-                if i >= 250:
-                    await asyncio.sleep(0.001)
-                    i = 0
-                i += 1
-            else:
-                await asyncio.sleep(0.1)
-    else:
-        await asyncio.sleep(0.5)
+                        wid = (proc2.ip * -1) -1
+                        if wid >= len(proc2.ios):
+                            web.page["p2stat"].innerHTML = "Stopped"
+                            proc2 = None
+                        else:
+                            web.page["p2stat"].innerHTML = f"Waiting for value on device {wid}"
+                if r:
+                    if i >= 500:
+                        print("waiting...")
+                        await asyncio.sleep(0.001)
+                        i = 0
+                    i += 1
+                else:
+                    await asyncio.sleep(0.1)
+        else:
+            await asyncio.sleep(0.5)

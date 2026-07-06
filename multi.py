@@ -1,4 +1,6 @@
 from main import Head, IntIO, asm, IO, fmtprint, TextIO
+import blessed
+import time
 
 class Reg(IO):
     def __init__(self):
@@ -497,10 +499,8 @@ def fourfunc():
     fmtprint(asmed, compres)
     return asmed
 
-
-if __name__ == "__main__":
+def run_singlecore(asmed):
     tio = TextIO(255)
-    asmed = fourfunc()
     h = Head(asmed, [tio])
     while True:
         h.advance()
@@ -518,3 +518,133 @@ if __name__ == "__main__":
                 i += -1
             if len(potinp) == 1:
                 tio.keys.append(ord(potinp))
+
+class IOHusk(IO):
+    def __init__(self):
+        self.inp = ""
+        self.out = ""
+
+    def set(self, x):
+        self.out += chr(x)
+    def get(self):
+        if self.inp == "":
+            return 0
+        else:
+            v = ord(self.inp[0])
+            self.inp = self.inp[1:]
+            return v
+    def has_val(self) -> bool:
+        return len(self.inp) != 0
+
+def fmtout(inp:str, width):
+    buf = [""]
+    for c in inp:
+        if c == "\n":
+            buf.append("")
+            continue
+        if len(buf[-1]) == width:
+            buf.append("")
+        buf[-1] += c
+    return buf
+
+
+def run_dualcore(asmed1, asmed2, boost):
+    term = blessed.Terminal()
+    print(term.home + term.clear)
+    with term.cbreak():
+        for i in range(0,term.height):
+            print(term.move_xy(term.width//2,i)+"|", end="",flush=True)
+        sio = IOHusk()
+        fio = IOHusk()
+        p = pair()
+        first = Head(asmed1,[fio,p[0]])
+        second = Head(asmed2, [p[1],sio])
+        fbuf = ""
+        sbuf = ""
+        l = True
+        while True:
+            for _ in range(boost):
+                first.advance()
+                second.advance()
+            fout = fmtout(fio.out, (term.width//2 - 1))
+            print(term.move_xy(0,0),end="",flush=True)
+            for line in fout[max(len(fout) - (term.height -2), 0):]:
+                print(line,flush=True)
+            sout = fmtout(sio.out, (term.width//2 - 1))
+            print(term.move_xy(term.width//2 + 1,0),end="",flush=True)
+            for line in sout[max(len(fout) - (term.height -2), 0):]:
+                print(line,flush=True)
+                print(term.move_x(term.width//2 + 1), end="", flush=True)
+
+            curpos = 0
+            if l:
+                curpos = min(len(fbuf),(term.width//2 -1))
+            else:
+                curpos = (term.width//2) + 1+ min(len(sbuf),(term.width//2 -1))
+            print(term.move_xy(0,term.height), 
+                fbuf[max(len(fbuf) - (term.width//2), 0):], 
+                " " * max(0,((term.width//2 -1) - len(fbuf))),
+                term.move_xy(term.width//2 + 1,term.height), 
+                sbuf[max(len(sbuf) - (term.width//2 - 1), 0):],
+                " " * max(0,((term.width//2 -1) - len(sbuf))),
+                term.move_xy(curpos,term.height), sep="",end="",flush=True)
+            key = term.inkey(0.01)
+            if key == "":
+                continue
+            if key.is_sequence:
+                match key.name:
+                    case "KEY_BACKSPACE":
+                        if l:
+                            fbuf = fbuf[:-1]
+                        else:
+                            sbuf = sbuf [:-1]
+                    case "KEY_TAB":
+                        l = not l
+                    case "KEY_ENTER":
+                        if l:
+                            fio.inp += (fbuf+"\n")
+                            fbuf = ""
+                        else:
+                            sio.inp += (sbuf+"\n")
+                            sbuf = ""
+            else:
+                if l:
+                    fbuf += str(key)
+                else:
+                    sbuf += str(key)
+
+
+if __name__ == "__main__":
+    c1 = asm("""#skip reading on first start, as IO may not have value
+Z:Z Z j:?+1
+j j ?+1 #set j to zero
+
+#add tgtp to j
+tgtp h0 ?+1
+h0 j -1
+
+tgt:-1 -2 -1 #Read from Processor 1 and write to IO.
+
+tgtp:tgt""")
+    c2 = asm("""#skip reading on first start, as IO may not have value
+Z:Z Z j:?+1
+j j ?+1 #set j to zero
+
+#add tgtp to j
+tgtp h0 ?+1
+h0 j -1
+
+tgt:-1 -2 -1 #Read from Processor 1 and write to IO.
+
+tgtp:tgt""")
+    run_dualcore(c1, c2, 32)
+    #p = pair()
+    #fio = IOHusk()
+    #sio = IOHusk()
+    #first = Head(c1, [fio, p[0]])
+    #second = Head(c2, [p[1],sio])
+    #while True:
+    #    first.advance()
+    #    second.advance
+    #    print(fio.out)
+    #    print(sio.out)

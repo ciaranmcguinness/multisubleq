@@ -75,11 +75,12 @@ class Head():
                     raise Exception("Shouldnt be possible")
             self.ip = c
         else:
-            if self.ios[((self.ip * -1) -1)].has_val():
-                self.ip = 0
+            if ((self.ip * -1) -1) < len(self.ios):
+                if self.ios[((self.ip * -1) -1)].has_val():
+                    self.ip = 0
 
 def asm(inp: str):
-    procinp = list(filter(lambda l: len(l) != 0, " ".join(filter(lambda l: l[0] != "#", inp.split("\n"))).split(" ")))
+    procinp = list(filter(lambda l: len(l) != 0, " ".join(filter(lambda l: l[0] != "#", filter(lambda x: len(x) != 0, map(lambda x: x.split("#")[0], inp.split("\n"))))).split(" ")))
     print(procinp)
     keys = {}
     c = []
